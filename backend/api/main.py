@@ -4,6 +4,7 @@ Asynchronous FastAPI endpoints for Models, Features, Governance, Fairness, and P
 """
 
 from fastapi import FastAPI
+from fastapi.responses import PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, List, Any
@@ -131,3 +132,15 @@ def sanitize_features(req: SanitizeInputRequest):
     from backend.security.adversarial_defense import AdversarialDefenseGuard
     guard = AdversarialDefenseGuard()
     return guard.sanitize_and_validate(req.features, req.clip_outliers)
+
+
+from backend.serving.telemetry import InferenceTelemetryRegistry
+
+global_telemetry_registry = InferenceTelemetryRegistry()
+global_telemetry_registry.record_inference("mdl_tabnet_risk_v1", 2.34, success=True)
+global_telemetry_registry.record_inference("mdl_ft_trans_v2", 3.12, success=True)
+
+
+@app.get("/metrics", tags=["Observability"], response_class=PlainTextResponse)
+def get_metrics():
+    return global_telemetry_registry.export_prometheus_text()
