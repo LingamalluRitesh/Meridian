@@ -67,3 +67,16 @@ def get_model_cards():
             }
         ]
     }
+
+
+class DriftAnalysisRequest(BaseModel):
+    feature_name: str
+    baseline: List[float]
+    current: List[float]
+
+
+@app.post("/api/v1/governance/drift-analysis")
+def analyze_drift(req: DriftAnalysisRequest):
+    from backend.governance.drift_detector import DriftDetector
+    detector = DriftDetector()
+    return detector.evaluate_feature_drift(req.feature_name, req.baseline, req.current)
