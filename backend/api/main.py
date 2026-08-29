@@ -80,3 +80,42 @@ def analyze_drift(req: DriftAnalysisRequest):
     from backend.governance.drift_detector import DriftDetector
     detector = DriftDetector()
     return detector.evaluate_feature_drift(req.feature_name, req.baseline, req.current)
+
+
+from backend.serving.bandit_router import MultiArmedBanditRouter
+
+global_bandit_router = MultiArmedBanditRouter()
+global_bandit_router.register_arm("mdl_tabnet_risk_v1", 0.92)
+global_bandit_router.register_arm("mdl_ft_trans_v2", 0.94)
+
+
+class RouteRequest(BaseModel):
+    strategy: str = "ucb1"
+
+
+class RewardRequest(BaseModel):
+    model_id: str
+    reward: float
+
+
+@app.post("/api/v1/serving/route")
+def route_traffic(req: RouteRequest):
+    if req.strategy == "epsilon_greedy":
+        selected = global_bandit_router.select_arm_epsilon_greedy()
+    else:
+        selected = global_bandit_router.select_arm_ucb1()
+    return {
+        "selected_model_id": selected,
+        "strategy": req.strategy,
+        "arms_state": global_bandit_router.arms,
+    }
+
+
+@app.post("/api/v1/serving/reward")
+def submit_reward(req: RewardRequest):
+    global_bandit_router.update_reward(req.model_id, req.reward)
+    return {
+        "status": "REWARD_RECORDED",
+        "model_id": req.model_id,
+        "updated_stats": global_bandit_router.arms.get(req.model_id),
+    }
