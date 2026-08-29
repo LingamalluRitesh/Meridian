@@ -119,3 +119,15 @@ def submit_reward(req: RewardRequest):
         "model_id": req.model_id,
         "updated_stats": global_bandit_router.arms.get(req.model_id),
     }
+
+
+class SanitizeInputRequest(BaseModel):
+    features: Dict[str, float]
+    clip_outliers: bool = True
+
+
+@app.post("/api/v1/security/sanitize-inputs")
+def sanitize_features(req: SanitizeInputRequest):
+    from backend.security.adversarial_defense import AdversarialDefenseGuard
+    guard = AdversarialDefenseGuard()
+    return guard.sanitize_and_validate(req.features, req.clip_outliers)
