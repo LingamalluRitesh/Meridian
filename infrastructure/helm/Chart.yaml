@@ -1,0 +1,4 @@
+apiVersion: v2
+name: modelforge-enterprise
+version: 1.0.0
+description: Helm Chart for ModelForge AI Cluster

@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: modelforge-api
+  namespace: modelforge
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: modelforge-api
+  template:
+    metadata:
+      labels:
+        app: modelforge-api
+    spec:
+      containers:
+        - name: api
+          image: modelforge-ai:latest
+          ports:
+            - containerPort: 8000
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "2000m"
+              memory: "2Gi"
